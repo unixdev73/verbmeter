@@ -24,13 +24,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 #include <iostream>
 #include <fstream>
 #include <numeric>
-#include <list>
-
-namespace {
-inline void log(std::string const &msg, std::ostream &out = std::cout) {
-  out << "INF: " << msg << "\n";
-}
-} // namespace
 
 namespace vr {
 struct WordPairInfoT {
@@ -46,7 +39,6 @@ struct DistanceHistogramT {
 int computeSinglePairDistances(std::vector<std::size_t> const *const posA,
                                std::vector<std::size_t> const *const posB,
                                std::size_t const totalWordCount,
-                               bool const aEqualsB,
                                std::vector<std::size_t> *const out);
 
 int computeWordDistances(
@@ -109,14 +101,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  vr::printHistogramData(&histogram);
-  std::cout << "\n";
+  // vr::printHistogramData(&histogram);
 
   std::ofstream outstream{output};
   if (!outstream.is_open())
     return 1;
   vr::writeHistogramData(&histogram, outstream);
-
   return 0;
 }
 
@@ -124,34 +114,43 @@ namespace vr {
 int computeSinglePairDistances(std::vector<std::size_t> const *const posA,
                                std::vector<std::size_t> const *const posB,
                                std::size_t const totalWordCount,
-                               bool const aEqualsB,
                                std::vector<std::size_t> *const out) {
-  if (!out)
+  if (!posA)
     return 1;
+  if (!posB)
+    return 2;
+  if (!out)
+    return 3;
 
   out->clear();
-  out->reserve(std::max(posA->size(), posB->size()));
-
-  const auto ascending = [](auto const &a, auto const &b) { return a < b; };
-  std::list<std::size_t> distances{};
+  out->reserve(posA->size());
 
   for (std::size_t i = 0; i < posA->size(); ++i) {
-    for (std::size_t j = 0; j < posB->size(); ++j) {
-      auto const endOffset = posB->at(j);
-      auto const begin = posA->at(i);
-      if (endOffset < posA->at(i))
-        distances.push_back(totalWordCount - posA->at(i) + endOffset);
-      else
-        distances.push_back(endOffset - begin);
+    bool loopAround = false;
+    auto nearestB = std::upper_bound(posB->begin(), posB->end(), posA->at(i));
+    if (nearestB == posB->end()) {
+      nearestB = posB->begin();
+      loopAround = true;
     }
 
-    distances.sort(ascending);
-    if (aEqualsB)
-      distances.pop_front();
-    if (distances.size())
-      out->push_back(distances.front());
-    distances.clear();
+    auto nearestA = posA->begin();
+    if (loopAround)
+      nearestA = --(posA->end());
+    else
+      nearestA =
+          std::prev(std::lower_bound(posA->begin(), posA->end(), *nearestB));
+
+    i = nearestA - posA->begin();
+
+    if (*nearestA == *nearestB)
+      continue;
+
+    if (loopAround)
+      out->push_back(totalWordCount - *nearestA + *nearestB);
+    else
+      out->push_back(*nearestB - *nearestA);
   }
+
   return 0;
 }
 
@@ -174,10 +173,9 @@ int computeWordDistances(
     std::vector<std::size_t> positionsA{}, positionsB{};
     qy::getWordPositions(db, *pair.first, &positionsA);
     qy::getWordPositions(db, *pair.second, &positionsB);
-    bool const aEqualsB = (*pair.first == *pair.second);
     WordPairInfoT info{};
     computeSinglePairDistances(&positionsA, &positionsB, totalWordCount,
-                               aEqualsB, &info.distances);
+                               &info.distances);
     info.distanceAvg =
         std::accumulate(info.distances.begin(), info.distances.end(), 0);
     info.distanceAvg = double(info.distanceAvg) / double(info.distances.size());
@@ -192,7 +190,16 @@ int writeHistogramData(DistanceHistogramT *const hist, std::ostream &out) {
   for (auto const &[pair, info] : hist->wordPairInfo) {
     std::string const wordA = *pair->first;
     std::string const wordB = *pair->second;
-    out << wordA << " " << wordB << " " << info.distanceAvg << " ";
+    std::string const part1 = "WORDS: " + wordA + ", " + wordB;
+    std::string const part2 = "AVG: " + std::to_string(info.distanceAvg);
+
+    out << part1;
+    for (std::size_t i = 0; i < 30 - part1.size(); ++i)
+      out << " ";
+    out << part2;
+    for (std::size_t i = 0; i < 20 - part2.size(); ++i)
+      out << " ";
+    out << "\tDISTANCES: ";
     for (auto const dist : info.distances)
       out << dist << " ";
     out << std::endl;
