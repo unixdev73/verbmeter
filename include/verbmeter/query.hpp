@@ -20,6 +20,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 namespace qy {
@@ -34,6 +35,9 @@ using Database = DatabaseT *;
 int createDatabase(Database *const);
 
 void destroyDatabase(Database const);
+
+using UniqueDatabase = std::unique_ptr<DatabaseT, void (*)(Database const)>;
+UniqueDatabase createUniqueDatabase();
 
 /* EXIT STATUS:
  *
@@ -67,4 +71,27 @@ int queryFile(Database const db, std::string const &file);
  */
 int getWords(Database const db, std::vector<std::string> *const out,
              std::size_t count = 0);
+
+/* EXIT STATUS:
+ *
+ * 0 - The operation was successful.
+ *
+ * 1 - The 'db' argument is a nullptr.
+ *
+ * 2 - The 'word' argument is not present within the database.
+ *
+ * 3 - The 'pos' argument is a nullptr.
+ */
+int getWordPositions(Database const db, std::string const &word,
+                     std::vector<std::size_t> *const pos);
+
+/* EXIT STATUS:
+ *
+ * 0 - The operation was successful.
+ *
+ * 1 - The 'db' argument is a nullptr.
+ *
+ * 2 - The 'count' argument is a nullptr.
+ */
+int getTotalWordCount(Database const db, std::size_t *const count);
 } // namespace qy

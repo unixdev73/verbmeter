@@ -18,31 +18,22 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#pragma once
-
-#include <vector>
-#include <string>
+#include <verbmeter/algo.hpp>
 
 namespace al {
-/* EXIT STATUS:
- *
- * 0 - The operation was completed successfully.
- *
- * 1 - The 'combinations' argument is a nullptr.
- */
-int gen2ElementCombinations(
-    std::vector<std::string> const &elements,
-    std::vector<std::pair<std::string const *, std::string const *>>
-        *const combinations);
-
-/* EXIT STATUS:
- *
- * 0 - The operation was completed successfully.
- *
- * 1 - The 'combinations' argument is a nullptr.
- */
 int gen2ElementVariations(
     std::vector<std::string> const &elements,
     std::vector<std::pair<std::string const *, std::string const *>>
-        *const combinations);
+        *const combinations) {
+  if (!combinations)
+    return 1;
+
+  combinations->clear();
+  combinations->reserve(elements.size() * elements.size());
+
+  for (std::size_t i = 0; i < elements.size(); ++i)
+    for (std::size_t j = 0; j < elements.size(); ++j)
+      combinations->push_back({&elements[i], &elements[j]});
+  return 0;
+}
 } // namespace al

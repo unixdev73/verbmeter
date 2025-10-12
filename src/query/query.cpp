@@ -33,6 +33,12 @@ int createDatabase(Database *const db) {
   return 0;
 }
 
+UniqueDatabase createUniqueDatabase() {
+  Database db{nullptr};
+  createDatabase(&db);
+  return {db, destroyDatabase};
+}
+
 void destroyDatabase(Database const db) { delete db; }
 
 int queryFile(Database const db, std::string const &file) {
@@ -51,6 +57,49 @@ int queryFile(Database const db, std::string const &file) {
   return 0;
 }
 
+int getWords(Database const db, std::vector<std::string> *const out,
+             std::size_t count) {
+  if (!db)
+    return 1;
+  if (count > db->sortedUniqueWords.size())
+    return 2;
+  if (!out)
+    return 3;
+
+  out->reserve(count);
+  for (std::size_t i = 0; i < count; ++i)
+    out->push_back(db->sortedUniqueWords[i]);
+  return 0;
+}
+
+int getWordPositions(Database const db, std::string const &word,
+                     std::vector<std::size_t> *const pos) {
+  if (!db)
+    return 1;
+  if (!db->wordInfo.contains(word))
+    return 2;
+  if (!pos)
+    return 3;
+
+  auto const &positions = db->wordInfo.at(word).positions;
+  pos->resize(positions.size());
+  for (std::size_t i = 0; i < positions.size(); ++i)
+    pos->at(i) = positions.at(i);
+  return 0;
+}
+
+int getTotalWordCount(Database const db, std::size_t *const count) {
+  if (!db)
+    return 1;
+  if (!count)
+    return 2;
+  *count = db->totalWordCount;
+  return 0;
+}
+} // namespace qy
+
+// PRIVATE API IMPLEMENTATION
+namespace qy {
 int sortWordsByOccurrence(DatabaseT *const db) {
   if (!db)
     return 1;
@@ -61,27 +110,11 @@ int sortWordsByOccurrence(DatabaseT *const db) {
     return scoreA > scoreB;
   };
 
-  std::sort(db->words.begin(), db->words.end(), condition);
+  std::sort(db->sortedUniqueWords.begin(), db->sortedUniqueWords.end(),
+            condition);
   return 0;
 }
 
-int getWords(Database const db, std::vector<std::string> *const out,
-             std::size_t count) {
-  if (!db)
-    return 1;
-  if (count > db->words.size())
-    return 2;
-  if (!out)
-    return 3;
-
-  out->reserve(count);
-  for (std::size_t i = 0; i < count; ++i)
-    out->push_back(db->words[i]);
-  return 0;
-} // namespace qy
-
-// PRIVATE API IMPLEMENTATION
-namespace qy {
 int countWordOccurrence(DatabaseT *const db, std::string const &file) {
   if (!db)
     return 1;
@@ -91,11 +124,13 @@ int countWordOccurrence(DatabaseT *const db, std::string const &file) {
   std::ifstream stream{file};
   if (!stream.is_open())
     return 2;
+  db->totalWordCount = 0;
 
   std::list<std::string> wordList{};
   std::string currentWord{};
 
   while (stream >> currentWord) {
+    ++db->totalWordCount;
     if (db->wordInfo.contains(currentWord))
       ++db->wordInfo.at(currentWord).count;
     else {
@@ -104,10 +139,10 @@ int countWordOccurrence(DatabaseT *const db, std::string const &file) {
     }
   }
 
-  db->words.resize(wordList.size());
+  db->sortedUniqueWords.resize(wordList.size());
   auto element = wordList.begin();
   for (std::size_t i = 0; i < wordList.size(); ++i) {
-    db->words[i] = std::move(*element);
+    db->sortedUniqueWords[i] = std::move(*element);
     element = std::next(element);
   }
   return 0;

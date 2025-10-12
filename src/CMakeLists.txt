@@ -4,3 +4,6 @@ endif()
 
 add_subdirectory(query)
 add_subdirectory(algo)
+
+add_executable(verbmhist histogram.cpp)
+target_link_libraries(verbmhist query algo)

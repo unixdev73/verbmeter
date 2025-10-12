@@ -32,7 +32,8 @@ struct WordInfoT {
 
 struct DatabaseT {
   std::unordered_map<std::string, WordInfoT> wordInfo{};
-  std::vector<std::string> words{};
+  std::vector<std::string> sortedUniqueWords{};
+  std::size_t totalWordCount{};
 };
 } // namespace qy
 
