@@ -25,19 +25,32 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 #include <vector>
 
 namespace qy {
-using SizeT = unsigned long long;
-
 struct WordInfoT {
-  std::vector<SizeT> positions{};
-  SizeT count{};
+  std::vector<std::size_t> positions{};
+  std::size_t count{};
 };
 
 struct DatabaseT {
   std::unordered_map<std::string, WordInfoT> wordInfo{};
+  std::vector<std::string> words{};
 };
 } // namespace qy
 
 namespace qy {
+/* DESCRIPTION:
+ *
+ * Sorts the collected words, most common first.
+ *
+ * EXIT STATUS:
+ *
+ * 0 - The operation was successful.
+ *
+ * 1 - The 'db' argument is a nullptr.
+ *
+ * 2 - The 'file' argument does not point to a valid file.
+ */
+int sortWordsByOccurrence(DatabaseT *const db);
+
 /* DESCRIPTION:
  *
  * Iterates over each word in a file and

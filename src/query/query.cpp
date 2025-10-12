@@ -19,8 +19,10 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
 #include "private/query.hpp"
-#include <fstream>
 #include <verbmeter/query.hpp>
+#include <algorithm>
+#include <fstream>
+#include <list>
 
 // PUBLIC API IMPLEMENTATION
 namespace qy {
@@ -34,14 +36,48 @@ int createDatabase(Database *const db) {
 void destroyDatabase(Database const db) { delete db; }
 
 int queryFile(Database const db, std::string const &file) {
+  if (!db)
+    return 1;
+
   if (auto error = countWordOccurrence(db, file); error)
-    return error;
+    return 2;
 
   if (auto error = extractWordPositions(db, file); error)
-    return error;
+    return 3;
+
+  if (auto error = sortWordsByOccurrence(db); error)
+    return 4;
 
   return 0;
 }
+
+int sortWordsByOccurrence(DatabaseT *const db) {
+  if (!db)
+    return 1;
+
+  auto condition = [db](std::string const &a, std::string const &b) {
+    auto const scoreA = db->wordInfo.at(a).count;
+    auto const scoreB = db->wordInfo.at(b).count;
+    return scoreA > scoreB;
+  };
+
+  std::sort(db->words.begin(), db->words.end(), condition);
+  return 0;
+}
+
+int getWords(Database const db, std::vector<std::string> *const out,
+             std::size_t count) {
+  if (!db)
+    return 1;
+  if (count > db->words.size())
+    return 2;
+  if (!out)
+    return 3;
+
+  out->reserve(count);
+  for (std::size_t i = 0; i < count; ++i)
+    out->push_back(db->words[i]);
+  return 0;
 } // namespace qy
 
 // PRIVATE API IMPLEMENTATION
@@ -56,12 +92,23 @@ int countWordOccurrence(DatabaseT *const db, std::string const &file) {
   if (!stream.is_open())
     return 2;
 
-  std::string word{};
-  while (stream >> word) {
-    if (db->wordInfo.contains(word))
-      ++db->wordInfo.at(word).count;
-    else
-      db->wordInfo.emplace(word, WordInfoT{{}, 1});
+  std::list<std::string> wordList{};
+  std::string currentWord{};
+
+  while (stream >> currentWord) {
+    if (db->wordInfo.contains(currentWord))
+      ++db->wordInfo.at(currentWord).count;
+    else {
+      db->wordInfo.emplace(currentWord, WordInfoT{{}, 1});
+      wordList.push_back(std::move(currentWord));
+    }
+  }
+
+  db->words.resize(wordList.size());
+  auto element = wordList.begin();
+  for (std::size_t i = 0; i < wordList.size(); ++i) {
+    db->words[i] = std::move(*element);
+    element = std::next(element);
   }
   return 0;
 }
@@ -81,8 +128,8 @@ int extractWordPositions(DatabaseT *const db, std::string const &file) {
     record.second.positions.reserve(size);
   }
 
+  std::size_t position{};
   std::string word{};
-  SizeT position{};
 
   while (stream >> word)
     db->wordInfo.at(word).positions.push_back(position++);

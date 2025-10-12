@@ -20,51 +20,18 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
 #pragma once
 
+#include <vector>
 #include <string>
 
-namespace qy {
-struct DatabaseT;
-using Database = DatabaseT *;
-
-/* EXIT STATUS:
- * 0 - The operation was completed successfuly.
- *
- * 1 - The operation failed.
- */
-int createDatabase(Database *const);
-
-void destroyDatabase(Database const);
-
+namespace al {
 /* EXIT STATUS:
  *
- * 0 - The operation was successful.
+ * 0 - The operation was completed successfully.
  *
- * 1 - The 'db' argument is a nullptr.
- *
- * 2 - Counting the word occurrence failed.
- *
- * 3 - Gathering word positions failed.
- *
- * 4 - Sorting the words, most common first, failed.
+ * 1 - The 'combinations' argument is a nullptr.
  */
-int queryFile(Database const db, std::string const &file);
-
-/* DESCRIPTION:
- *
- * Returns a sequence of words that occur most commonly in the database.
- * Requires the queryFile function to be run first.
- * If 'count' is equal to 0, all the words are returned.
- *
- * EXIT STATUS:
- *
- * 0 - The operation was successful.
- *
- * 1 - The 'db' argument is a nullptr.
- *
- * 2 - The 'count' argument is greater than the available number of words.
- *
- * 3 - The 'out' argument is a nullptr.
- */
-int getWords(Database const db, std::vector<std::string> *const out,
-             std::size_t count = 0);
-} // namespace qy
+int gen2ElementCombinations(
+    std::vector<std::string> const &elements,
+    std::vector<std::pair<std::string const *, std::string const *>>
+        *const combinations);
+} // namespace al
