@@ -20,6 +20,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
 #include <verbmeter/query.hpp>
 #include <verbmeter/algo.hpp>
+#include <unordered_map>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
