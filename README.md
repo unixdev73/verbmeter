@@ -32,3 +32,14 @@ It can be run like so:
 ```bash
 ./build/src/verbmhist /path/to/file <numberOfMostCommonWords> /path/to/output/file
 ```
+
+# mkhists
+
+The mkhists script runs the verbmhist binary on all files in a directory
+
+```bash
+./script/mkhists ./path/to/source/dir <numOfMostCommonWords> <sortByAvg>
+```
+
+The script generates an output file for each input file with a similar name,
+but with the prefix HIST_.
