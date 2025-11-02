@@ -34,7 +34,9 @@ struct WordPairInfoT {
 
 struct DistanceHistogramT {
   using WordPair = std::pair<std::string const *, std::string const *> *;
+
   std::unordered_map<WordPair, WordPairInfoT> wordPairInfo;
+  std::vector<typename decltype(wordPairInfo)::iterator> wordPairPtr;
 };
 
 int computeSinglePairDistances(std::vector<std::size_t> const *const posA,
@@ -44,17 +46,18 @@ int computeSinglePairDistances(std::vector<std::size_t> const *const posA,
 
 int computeWordDistances(
     qy::Database const db,
-    std::vector<std::pair<std::string const *, std::string const *>>
-        *const variations,
+    std::vector<std::pair<std::string const *, std::string const *>> *const
+        variations,
     DistanceHistogramT *const hist);
 
-int writeHistogramData(DistanceHistogramT *const hist, std::ostream &out);
-void printHistogramData(DistanceHistogramT *const hist);
+int writeHistogramData(DistanceHistogramT const *const hist, std::ostream &out);
+void printHistogramData(DistanceHistogramT const *const hist);
 } // namespace vr
 
 int main(int argc, char **argv) {
   if (argc < 4) {
-    std::cerr << "Usage: <filepath> <number of most freq words> <output>\n";
+    std::cerr << "Usage: <filepath> <number of most freq words> <output> "
+                 "[sortByAvg=no]\n";
     return 1;
   }
 
@@ -62,6 +65,10 @@ int main(int argc, char **argv) {
   qy::Database const db = dbPtr.get();
   std::string const filepath{argv[1]};
   std::string const output{argv[3]};
+  bool sortByAvg{false};
+  if (argc > 4)
+    if (std::string{argv[4]} == "yes")
+      sortByAvg = true;
   std::size_t numOfMfw{};
 
   try {
@@ -100,6 +107,13 @@ int main(int argc, char **argv) {
     std::cerr << "Failed to compute distances with error code: " << error
               << std::endl;
     return 1;
+  }
+
+  if (sortByAvg) {
+    std::sort(histogram.wordPairPtr.begin(), histogram.wordPairPtr.end(),
+              [](auto const &a, auto const &b) {
+                return a->second.distanceAvg > b->second.distanceAvg;
+              });
   }
 
   // vr::printHistogramData(&histogram);
@@ -158,8 +172,8 @@ int computeSinglePairDistances(std::vector<std::size_t> const *const posA,
 int computeWordDistances(
     qy::Database const db,
     std::vector<std::pair<std::string const *, std::string const *>>
-        *const variations,
-    DistanceHistogramT *const hist) {
+        *variations,
+    DistanceHistogramT *hist) {
   if (!db)
     return 1;
   if (!variations)
@@ -169,6 +183,8 @@ int computeWordDistances(
 
   std::size_t totalWordCount{};
   qy::getTotalWordCount(db, &totalWordCount);
+  hist->wordPairPtr.clear();
+  hist->wordPairPtr.reserve(variations->size());
 
   for (auto &pair : *variations) {
     std::vector<std::size_t> positionsA{}, positionsB{};
@@ -180,15 +196,20 @@ int computeWordDistances(
     info.distanceAvg =
         std::accumulate(info.distances.begin(), info.distances.end(), 0);
     info.distanceAvg = double(info.distanceAvg) / double(info.distances.size());
-    hist->wordPairInfo.emplace(&pair, std::move(info));
+
+    auto pairIt = hist->wordPairInfo.emplace(&pair, std::move(info)).first;
+    hist->wordPairPtr.push_back(pairIt);
   }
+
   return 0;
 }
 
-int writeHistogramData(DistanceHistogramT *const hist, std::ostream &out) {
+int writeHistogramData(DistanceHistogramT const *const hist,
+                       std::ostream &out) {
   if (!hist)
     return 1;
-  for (auto const &[pair, info] : hist->wordPairInfo) {
+  for (auto const &rec : hist->wordPairPtr) {
+    auto const &[pair, info] = *rec;
     std::string const wordA = *pair->first;
     std::string const wordB = *pair->second;
     std::string const part1 = "WORDS: " + wordA + ", " + wordB;
@@ -208,7 +229,7 @@ int writeHistogramData(DistanceHistogramT *const hist, std::ostream &out) {
   return 0;
 }
 
-void printHistogramData(DistanceHistogramT *const hist) {
+void printHistogramData(DistanceHistogramT const *const hist) {
   writeHistogramData(hist, std::cout);
 }
 } // namespace vr
