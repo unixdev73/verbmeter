@@ -1,4 +1,5 @@
 #include <verbmeter/algo.hpp>
+#include <algorithm>
 
 namespace al {
 int computeSinglePairDistances(std::vector<std::size_t> const *const posA,
