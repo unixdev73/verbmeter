@@ -2,13 +2,19 @@
 
 # This script runs verbmhist on all files in a directory
 
-declare -r helpMsg="Usage: <source file directory> <num of most common words> <sort by avg>";
+declare -r helpMsg="Usage: <source file dir> <output dir> <num of most common words>";
 declare -r sourceFileDir="${1}";
-declare -r numOfMaxOcc="${2}";
-declare -r sortByAvg="${3}";
+declare -r outputDir="${2}";
+declare -r numOfMaxOcc="${3}";
 
 if [[ ! -d "${sourceFileDir}" ]]; then
 	echo "The source file directory: '${sourceFileDir}' does not exist!";
+	echo "${helpMsg}";
+	exit 1;
+fi
+
+if [[ ! -d "${outputDir}" ]]; then
+	echo "The output directory: '${outputDir}' does not exist!";
 	echo "${helpMsg}";
 	exit 1;
 fi
@@ -19,17 +25,11 @@ if [[ -z "${numOfMaxOcc}" ]]; then
 	exit 1;
 fi
 
-if [[ "${sortByAvg}" != "yes" && "${sortByAvg}" != "no" ]]; then
-	echo "The sortByAvg parameter must be either 'yes', or 'no'!";
-	echo "${helpMsg}";
-	exit 1;
-fi
-
 sourceFileList="$(ls ${sourceFileDir})";
 
 for file in ${sourceFileList}; do
-	echo -n "Running verbmhist on: ${sourceFileDir}/${file}...";
-	./build/src/verbmhist "${sourceFileDir}/${file}" "${numOfMaxOcc}" "${sourceFileDir}/HIST_${file}" "${sortByAvg}";
+	echo -n "Analyzing file: ${sourceFileDir}/${file}...";
+	./build/src/verbmeter "${sourceFileDir}/${file}" "${outputDir}/${file%.*}" "${numOfMaxOcc}";
 
 	if [[ "$?" == "0" ]]; then
 		echo " done.";

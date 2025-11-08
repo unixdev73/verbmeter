@@ -115,6 +115,15 @@ int sortWordsByOccurrence(DatabaseT *const db) {
   return 0;
 }
 
+std::string toLower(std::string const &word) {
+  std::string converted{};
+  converted.reserve(word.size());
+  for (auto c : word)
+    if (std::isalpha(c))
+      converted.push_back(std::tolower(c));
+  return converted;
+}
+
 int countWordOccurrence(DatabaseT *const db, std::string const &file) {
   if (!db)
     return 1;
@@ -130,10 +139,7 @@ int countWordOccurrence(DatabaseT *const db, std::string const &file) {
   std::string currentWord{};
 
   while (stream >> currentWord) {
-    std::string tmp = std::move(currentWord);
-    currentWord.clear();
-    for (std::size_t i = 0; i < tmp.size(); ++i)
-      currentWord.push_back(std::tolower(i));
+    currentWord = toLower(currentWord);
 
     ++db->totalWordCount;
     if (db->wordInfo.contains(currentWord))
@@ -171,8 +177,10 @@ int extractWordPositions(DatabaseT *const db, std::string const &file) {
   std::size_t position{};
   std::string word{};
 
-  while (stream >> word)
+  while (stream >> word) {
+    word = toLower(word);
     db->wordInfo.at(word).positions.push_back(position++);
+  }
   return 0;
 }
 } // namespace qy

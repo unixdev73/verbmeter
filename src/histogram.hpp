@@ -18,36 +18,29 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#pragma once
-
+#include <verbmeter/query.hpp>
+#include <unordered_map>
 #include <vector>
-#include <string>
 
-namespace al {
-/* EXIT STATUS:
- *
- * 0 - The operation was completed successfully.
- *
- * 1 - The 'combinations' argument is a nullptr.
- */
-int gen2ElementCombinations(
-    std::vector<std::string> const &elements,
-    std::vector<std::pair<std::string const *, std::string const *>>
-        *const combinations);
+namespace vr {
+struct WordPairInfoT {
+  std::vector<std::size_t> distances;
+  double distanceAvg{};
+};
 
-/* EXIT STATUS:
- *
- * 0 - The operation was completed successfully.
- *
- * 1 - The 'combinations' argument is a nullptr.
- */
-int gen2ElementVariations(
-    std::vector<std::string> const &elements,
-    std::vector<std::pair<std::string const *, std::string const *>>
-        *const combinations);
+struct DistanceHistogramT {
+  using WordPair = std::pair<std::string const *, std::string const *> *;
 
-int computeSinglePairDistances(std::vector<std::size_t> const *const posA,
-                               std::vector<std::size_t> const *const posB,
-                               std::size_t const totalWordCount,
-                               std::vector<std::size_t> *const out);
-} // namespace al
+  std::unordered_map<WordPair, WordPairInfoT> wordPairInfo;
+  std::vector<typename decltype(wordPairInfo)::iterator> wordPairPtr;
+};
+
+int computeWordDistances(
+    qy::Database const db,
+    std::vector<std::pair<std::string const *, std::string const *>> *const
+        variations,
+    DistanceHistogramT *const hist);
+
+int writeHistogramData(DistanceHistogramT const *const hist, std::ostream &out);
+void printHistogramData(DistanceHistogramT const *const hist);
+} // namespace vr
