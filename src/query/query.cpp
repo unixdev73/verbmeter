@@ -130,6 +130,11 @@ int countWordOccurrence(DatabaseT *const db, std::string const &file) {
   std::string currentWord{};
 
   while (stream >> currentWord) {
+    std::string tmp = std::move(currentWord);
+    currentWord.clear();
+    for (std::size_t i = 0; i < tmp.size(); ++i)
+      currentWord.push_back(std::tolower(i));
+
     ++db->totalWordCount;
     if (db->wordInfo.contains(currentWord))
       ++db->wordInfo.at(currentWord).count;
