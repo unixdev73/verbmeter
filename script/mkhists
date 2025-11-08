@@ -29,6 +29,10 @@ sourceFileList="$(ls ${sourceFileDir})";
 
 for file in ${sourceFileList}; do
 	echo -n "Analyzing file: ${sourceFileDir}/${file}...";
+	if [[ ! -d "${outputDir}/${file%.*}" ]]; then
+		mkdir -p ${outputDir}/${file%.*};
+	fi
+
 	./build/src/verbmeter "${sourceFileDir}/${file}" "${outputDir}/${file%.*}" "${numOfMaxOcc}";
 
 	if [[ "$?" == "0" ]]; then

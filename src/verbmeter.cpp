@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
   }
 
   if (!std::filesystem::exists(outputDir)) {
-    std::cerr << "The input dir: '" << outputDir << "' does not exist\n";
+    std::cerr << "The output dir: '" << outputDir << "' does not exist\n";
     return 1;
   }
 
