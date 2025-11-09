@@ -103,13 +103,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  for (std::size_t i = 0; i < numOfMfw; ++i) {
-    std::ofstream outstream{std::filesystem::path(outputDir) /
-                            std::filesystem::path(std::to_string(i) + ".txt")};
-    if (!outstream.is_open())
-      return 1;
-    vr::writeHistogramData(&histogram, outstream);
-  }
+  vr::writeHistogramData(&histogram, outputDir, numOfMfw);
   return 0;
 }
 
@@ -117,7 +111,9 @@ namespace vr {
 int writeMappingFile(DistanceHistogramT const *const hist, std::ostream &out) {
   std::size_t index = 0;
 
-  for (auto const &[pair, info] : hist->wordPairInfo) {
+  for (auto entry = hist->wordPairPtr.begin(); entry != hist->wordPairPtr.end();
+       ++entry) {
+    auto const &[pair, info] = *(*entry);
     out << index << "\t" << (*pair->first) << " " << (*pair->second) << "\n";
     ++index;
   }

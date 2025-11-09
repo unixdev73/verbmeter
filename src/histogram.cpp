@@ -21,7 +21,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 #include <verbmeter/algo.hpp>
 #include "histogram.hpp"
 #include <unordered_map>
-#include <iostream>
+#include <filesystem>
+#include <fstream>
 #include <numeric>
 
 namespace vr {
@@ -61,17 +62,27 @@ int computeWordDistances(
 }
 
 int writeHistogramData(DistanceHistogramT const *const hist,
-                       std::ostream &out) {
+                       std::string const &outputDir,
+                       std::size_t const numOfMfw) {
   if (!hist)
     return 1;
-  for (auto const &rec : hist->wordPairPtr) {
-    for (auto const dist : rec->second.distances)
-      out << dist << "\n";
-  }
-  return 0;
-}
+  auto entry = hist->wordPairPtr.begin();
 
-void printHistogramData(DistanceHistogramT const *const hist) {
-  writeHistogramData(hist, std::cout);
+  for (std::size_t i = 0; i < numOfMfw && entry != hist->wordPairPtr.end();
+       ++i) {
+    std::ofstream outstream{std::filesystem::path(outputDir) /
+                            std::filesystem::path(std::to_string(i) + ".txt")};
+    if (!outstream.is_open())
+      return 1;
+
+    for (std::size_t i = 0; i < (*entry)->second.distances.size(); ++i) {
+      outstream << (*entry)->second.distances[i];
+      if (i < (*entry)->second.distances.size() - 1)
+        outstream << "\n";
+    }
+                entry = std::next(entry);
+  }
+
+  return 0;
 }
 } // namespace vr

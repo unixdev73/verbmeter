@@ -41,6 +41,7 @@ int computeWordDistances(
         variations,
     DistanceHistogramT *const hist);
 
-int writeHistogramData(DistanceHistogramT const *const hist, std::ostream &out);
-void printHistogramData(DistanceHistogramT const *const hist);
+int writeHistogramData(DistanceHistogramT const *const hist,
+                       std::string const &outputDir,
+                       std::size_t const numOfMfw);
 } // namespace vr
