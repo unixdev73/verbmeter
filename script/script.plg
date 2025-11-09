@@ -1,0 +1,5 @@
+set terminal svg size 1080 720
+set style fill solid 0.8 border -1
+set output outputFile
+binwidth = 1.0
+plot inputFile using (floor($1/binwidth) * binwidth):1 smooth freq with boxes lc rgb 'skyblue' title 'Frequency'

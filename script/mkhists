@@ -32,7 +32,7 @@ for file in ${sourceFileList}; do
 	if [[ ! -d "${outputDir}/${file%.*}" ]]; then
 		mkdir -p ${outputDir}/${file%.*};
 	else
-		echo "The directory: '${outputDir}/${file%.*}' already exists. Skipping...";
+		echo "\nThe directory: '${outputDir}/${file%.*}' already exists. Skipping...";
 		continue;
 	fi
 
@@ -43,4 +43,16 @@ for file in ${sourceFileList}; do
 	else
 		exit 1;
 	fi
+
+	for distanceFile in $(ls ${outputDir}/${file%.*}); do
+		if [[ "${distanceFile}" == "mapping.txt" ]]; then
+			continue;
+		fi
+
+		echo -ne "\033[2KGenerating histogram file: ${outputDir}/${file%.*}/histogram${distanceFile%.*}.svg...";
+		gnuplot -e "inputFile='${outputDir}/${file%.*}/${distanceFile}'" -e "outputFile='${outputDir}/${file%.*}/histogram${distanceFile%.*}.svg'" ./script/script.plg;
+		echo -ne " done.\r";
+	done
+
+	echo "";
 done
